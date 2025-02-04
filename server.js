@@ -1,27 +1,20 @@
-require("dotenv").config();
-const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
-
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-if (!OPENAI_API_KEY) {
-    console.error("❌ Ошибка: API-ключ OpenAI отсутствует!");
-}
+const cache = new Map();
 
 app.post("/chat", async (req, res) => {
-    console.log("📩 Получено сообщение от пользователя:", req.body.message);
+    const userMessage = req.body.message;
+
+    // Проверяем кеш
+    if (cache.has(userMessage)) {
+        console.log("✅ Ответ из кеша");
+        return res.json({ reply: cache.get(userMessage) });
+    }
 
     try {
         const response = await axios.post(
             "https://api.openai.com/v1/chat/completions",
             {
                 model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: req.body.message }],
+                messages: [{ role: "user", content: userMessage }],
             },
             {
                 headers: {
@@ -31,18 +24,19 @@ app.post("/chat", async (req, res) => {
             }
         );
 
-        console.log("✅ Ответ от OpenAI:", response.data);
-        res.json({ reply: response.data.choices[0].message.content });
+        const botReply = response.data.choices[0].message.content;
+        console.log("Отправляю запрос к OpenAI:", req.body.message);
+        cache.set(userMessage, botReply); // Кешируем ответ
+
+        console.log("✅ Ответ от OpenAI:", botReply);
+        res.json({ reply: botReply });
     } catch (error) {
         if (error.response?.status === 429) {
-            console.error("❌ Превышен лимит запросов OpenAI, делаем паузу...");
-            // Ждём 1 минуту перед повторной попыткой
-            await new Promise(resolve => setTimeout(resolve, 120000));  // 2 минуты
-            return res.status(429).json({ error: "Превышен лимит запросов, попробуйте позже." });
+            console.error("❌ Превышен лимит запросов OpenAI, ждем 5 минут...");
+            await new Promise(resolve => setTimeout(resolve, 300000)); // 5 минут паузы
+            return res.status(429).json({ error: "Лимит запросов превышен. Попробуйте позже." });
         }
         console.error("❌ Ошибка при запросе к OpenAI:", error.response?.data || error.message);
-        res.status(500).json({ error: "Ошибка сервера. Подробнее смотри в логах Railway." });
+        res.status(500).json({ error: "Ошибка сервера." });
     }
 });
-
-app.listen(3000, () => console.log("🚀 Сервер запущен на порту 3000"));
