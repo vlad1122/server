@@ -2,21 +2,6 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-const server = app.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
-});
-
-// Если порт уже используется, сервер не будет крашиться
-server.on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-        console.error(`❌ Ошибка: порт ${PORT} уже используется!`);
-        process.exit(1); // Завершаем процесс, чтобы Railway перезапустил сервер
-    } else {
-        throw err;
-    }
-});
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.use(express.json());
