@@ -37,7 +37,7 @@ app.post("/chat", async (req, res) => {
         if (error.response?.status === 429) {
             console.error("❌ Превышен лимит запросов OpenAI, делаем паузу...");
             // Ждём 1 минуту перед повторной попыткой
-            await new Promise(resolve => setTimeout(resolve, 60000));  
+            await new Promise(resolve => setTimeout(resolve, 120000));  // 2 минуты
             return res.status(429).json({ error: "Превышен лимит запросов, попробуйте позже." });
         }
         console.error("❌ Ошибка при запросе к OpenAI:", error.response?.data || error.message);
