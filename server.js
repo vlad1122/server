@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
-const PORT = process.env.PORT || 27015;
+const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
